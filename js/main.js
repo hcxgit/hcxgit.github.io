@@ -1,102 +1,136 @@
-/* 
-	2018.8.26 modify by lcc 
-	based on the js plugin http://www.htmleaf.com/jQuery/Menu-Navigation/20141212771.html 
-	based on other unknown sources...
-	thanks for their open sources!
-*/
-jQuery(document).ready(function($){
+(function ($) {
+    // To top button
+    $("#back-to-top").on('click', function () {
+        $('body, html').animate({ scrollTop: 0 }, 600);
+    });
 
- 	"use strict";
+    // Nav bar toggle
+    $('#main-nav-toggle').on('click', function () {
+        $('.nav-container-inner').slideToggle();
+    });
 
-	/* Preloader */
-	var Annie_Preloader = function() {
-		$(window).on("load", function() { 
-			// fade out the loading animation
-			$("#status").fadeOut(); 
+    // Caption
+    $('.article-entry').each(function(i) {
+        $(this).find('img').each(function() {
+            if (this.alt && !(!!$.prototype.justifiedGallery && $(this).parent('.justified-gallery').length)) {
+                $(this).after('<span class="caption">' + this.alt + '</span>');
+            }
 
-			//fade out the white DIV that covers the website
-			$("#preloader").delay(400).fadeOut("slow"); 
-		});	
-	}; 
+            // 对于已经包含在链接内的图片不适用lightGallery
+            if ($(this).parent().prop("tagName") !== 'A') {
+                $(this).wrap('<a href="' + this.src + '" title="' + this.alt + '" class="gallery-item"></a>');
+            }
+        });
 
-	/* Nav */
-	var Annie_Nav = function() {
-		// browser window scroll (in pixels) after which the "menu" link is shown
-		var offset = 300;
+    });
+    if (typeof lightGallery != 'undefined') {
+        var options = {
+            selector: '.gallery-item',
+        };
+        $('.article-entry').each(function(i, entry) {
+            lightGallery(entry, options);
+        });
+        lightGallery($('.article-gallery')[0], options);
+    }
+    if (!!$.prototype.justifiedGallery) {  // if justifiedGallery method is defined
+        var options = {
+            rowHeight: 140,
+            margins: 4,
+            lastRow: 'justify'
+        };
+        $('.justified-gallery').justifiedGallery(options);
+    }
 
-		var navigationContainer = $('#cd-nav');
-		var	mainNavigation = navigationContainer.find('#cd-main-nav ul');
+    // Sidebar expend
+    $('#sidebar .sidebar-toggle').on('click', function () {
+        if($('#sidebar').hasClass('expend')) {
+            $('#sidebar').removeClass('expend');
+        } else {
+            $('#sidebar').addClass('expend');
+        }
+    });
 
-		//hide or show the "menu" link
-		checkMenu();
-		$(window).scroll(function(){
-			checkMenu();
-		});
 
-		//open or close the menu clicking on the bottom "menu" link
-		$('.cd-nav-trigger').on('click', function(){
-			$(this).toggleClass('menu-is-open');
-			//we need to remove the transitionEnd event handler (we add it when scolling up with the menu open)
-			mainNavigation.off('webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend').toggleClass('is-visible');
-		});
+    // Remove extra main nav wrap
+    $('.main-nav-list > li').unwrap();
 
-		function checkMenu() {
-			if( $(window).scrollTop() > offset && !navigationContainer.hasClass('is-fixed')) {
-				navigationContainer.addClass('is-fixed').find('.cd-nav-trigger').one('webkitAnimationEnd oanimationend msAnimationEnd animationend', function(){
-					mainNavigation.addClass('has-transitions');
-				});
-			} else if ($(window).scrollTop() <= offset) {
-				//check if the menu is open when scrolling up
-				if( mainNavigation.hasClass('is-visible')  && !$('html').hasClass('no-csstransitions') ) {
-					//close the menu with animation
-					mainNavigation.addClass('is-hidden').one('webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend', function(){
-						//wait for the menu to be closed and do the rest
-						mainNavigation.removeClass('is-visible is-hidden has-transitions');
-						navigationContainer.removeClass('is-fixed');
-						$('.cd-nav-trigger').removeClass('menu-is-open');
-					});
-				//check if the menu is open when scrolling up - fallback if transitions are not supported
-				} else if( mainNavigation.hasClass('is-visible')  && $('html').hasClass('no-csstransitions') ) {
-					mainNavigation.removeClass('is-visible has-transitions');
-					navigationContainer.removeClass('is-fixed');
-					$('.cd-nav-trigger').removeClass('menu-is-open');
-				//scrolling up with menu closed
-				} else {
-					navigationContainer.removeClass('is-fixed');
-					mainNavigation.removeClass('has-transitions');
-				}
-			} 
-		}	
-	}; 
+    // Highlight current nav item
+    $('#main-nav > li > .main-nav-list-link').each(function () {
+        if($('.page-title-link').length > 0){
+            if ($(this).html().toUpperCase() == $('.page-title-link').html().toUpperCase()) {
+                $(this).addClass('current');
+            } else if ($(this).attr('href') == $('.page-title-link').attr('data-url')) {
+                $(this).addClass('current');
+            }
+        }
+    });
 
-	/* Random bg-img for header*/
-	var Annie_Random = function() {
-		//generate a random img that pre_name 'from 0 to 110'
-		var random_bg = Math.floor(Math.random() * 109 + 1);
-		//var bg = 'url(/img/random/' + random_bg + '.jpg)';
-		var bg = 'url(/img/random/' + random_bg + '.jpg)';
-		$("header").css("background-image", bg);
-	};
+    // Auto hide main nav menus
+    function autoHideMenus(){
+        var max_width = $('.nav-container-inner').width() - 10;
+        var main_nav_width = $('#main-nav').width();
+        var sub_nav_width = $('#sub-nav').width();
+        if (main_nav_width + sub_nav_width > max_width) {
+            // If more link not exists
+            if ($('.main-nav-more').length == 0) {
+                $(['<li class="main-nav-list-item top-level-menu main-nav-more">',
+                    '<a class="main-nav-list-link" href="javascript:;">More</a>',
+                    '<ul class="main-nav-list-child">',
+                    '</ul></li>'].join('')).appendTo($('#main-nav'));
+                // Bind hover event
+                $('.main-nav-more').hover(function () {
+                    if($(window).width() < 480) {
+                        return;
+                    }
+                    $(this).children('.main-nav-list-child').slideDown('fast');
+                }, function () {
+                    if($(window).width() < 480) {
+                        return;
+                    }
+                    $(this).children('.main-nav-list-child').slideUp('fast');
+                });
+            }
+            var child_count = $('#main-nav').children().length;
+            for (var i = child_count - 2; i >= 0; i--) {
+                var element = $('#main-nav').children().eq(i);
+                if (main_nav_width + sub_nav_width > max_width) {
+                    element.prependTo($('.main-nav-more > ul'));
+                    main_nav_width = $('#main-nav').width();
+                } else {
+                    return;
+                }
+            }
+        }
+        // Nav bar is wide enough
+        if ($('.main-nav-more').length > 0) {
+            $('.main-nav-more > ul').children().appendTo($('#main-nav'));
+            $('.main-nav-more').remove();
+        }
+    }
+    autoHideMenus();
 
-	/* ToTop */
-	var Annie_ToTop = function() {
-		/* your code */
-	};
+    $(window).on('resize', function () {
+        autoHideMenus();
+    });
 
-	/* Toc */	
-	var Annie_Toc = function() {
-		/* your code */
-	};
+    // Fold second-level menu
+    $('.main-nav-list-item').hover(function () {
+        if ($(window).width() < 480) {
+            return;
+        }
+        $(this).children('.main-nav-list-child').slideDown('fast');
+    }, function () {
+        if ($(window).width() < 480) {
+            return;
+        }
+        $(this).children('.main-nav-list-child').slideUp('fast');
+    });
 
-	/* other js function */
-	/* ... */
+    // Add second-level menu mark
+    $('.main-nav-list-item').each(function () {
+        if ($(this).find('.main-nav-list-child').length > 0) {
+            $(this).addClass('top-level-menu');
+        }
+    });
 
-	/* Initialize */
-	(function Annie_Init() {
-		Annie_Preloader();
-		Annie_Nav();
-		Annie_Random();
-		Annie_ToTop();
-		Annie_Toc();
-	})();
-});
+})(jQuery);
